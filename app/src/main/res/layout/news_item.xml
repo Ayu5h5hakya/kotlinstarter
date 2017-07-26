@@ -1,21 +1,48 @@
 <?xml version="1.0" encoding="utf-8"?>
 
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:layout_margin="20dp"
-    android:gravity="center_horizontal"
-    android:orientation="horizontal">
+    android:gravity="center_horizontal">
 
     <ImageView
+        android:id="@+id/profilePic"
         android:layout_width="50dp"
         android:layout_height="50dp"
-        android:id="@+id/profilePic"
-        android:src="@android:mipmap/sym_def_app_icon"/>
+        android:src="@android:mipmap/sym_def_app_icon" />
 
     <TextView
-        android:id="@+id/content"
+        android:id="@+id/contactName"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="hahaah"/>
-</LinearLayout>
+        android:layout_toRightOf="@+id/profilePic"
+        android:text="hahaah" />
+
+    <TextView
+        android:id="@+id/contactNumber"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/contactName"
+        android:layout_toRightOf="@+id/profilePic"
+        android:text="hahaah" />
+
+    <TextView
+        android:id="@+id/contactAddress"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/contactNumber"
+        android:layout_toRightOf="@+id/profilePic"
+        android:text="hahaah" />
+
+    <ImageView
+        android:id="@+id/deleteContact"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:src="@drawable/drawable_delete"
+        android:layout_alignParentEnd="true"
+        android:layout_alignParentRight="true"
+        android:layout_centerVertical="true" />
+
+
+</RelativeLayout>

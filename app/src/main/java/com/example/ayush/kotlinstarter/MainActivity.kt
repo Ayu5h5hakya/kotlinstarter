@@ -1,86 +1,110 @@
 package com.example.ayush.kotlinstarter
 
+import android.app.Activity
+import android.content.Context
+import android.content.Intent
 import android.os.Bundle
-import android.support.design.widget.Snackbar
 import android.support.v7.app.AppCompatActivity
 import android.support.v7.widget.LinearLayoutManager
 import android.support.v7.widget.RecyclerView
 import android.support.v7.widget.Toolbar
-import io.reactivex.android.schedulers.AndroidSchedulers
-import io.reactivex.schedulers.Schedulers
+import android.view.Menu
+import android.view.MenuItem
+import io.realm.Realm
 import kotlinx.android.synthetic.main.activity_main.*
 
-class MainActivity : AppCompatActivity() {
+class MainActivity : AppCompatActivity(), ContactAdapter.ContactListClickListener {
 
-    private val newsListing: RecyclerView by lazy {
+    private val contacts: RecyclerView by lazy {
+        idRecycler.layoutManager = LinearLayoutManager(this)
+        idRecycler.setHasFixedSize(true)
         idRecycler
     }
 
-    private val newsManager by lazy {
-        NewsManager()
-    }
-
-    private var redditNews: RedditNews? = null
+    lateinit var realm: Realm
 
     override fun onCreate(savedInstanceState: Bundle?) {
+
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
         val toolbar = findViewById(R.id.toolbar) as Toolbar
+        setSupportActionBar(toolbar)
 
-        newsListing.setHasFixedSize(true)
-        var linearlayout = LinearLayoutManager(this)
-        newsListing.layoutManager = linearlayout
-        newsListing.clearOnScrollListeners()
-        newsListing.addOnScrollListener(InfiniteScrollListener({ requestNews() }, linearlayout))
-        newsListing.adapter = NewsAdapter()
-
-        requestNews()
-
-        logExecution("Testing") { requestNews() }
-
-        var(_, status) = function()
-
-
-    }
-
-    fun requestNews() {
-        val subscription = newsManager.getNews()
-                .subscribeOn(Schedulers.io())
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe({
-                    retrievedNews ->
-                    (newsListing.adapter as NewsAdapter).addNews(retrievedNews.data.children)
-                }, {
-                    e ->
-                    Snackbar.make(newsListing, e.message ?: "", Snackbar.LENGTH_SHORT).show()
-                })
+        realm = Realm.getDefaultInstance()
 
     }
 
     override fun onResume() {
         super.onResume()
-    }
-
-    override fun onPause() {
-        super.onPause()
-    }
-
-    fun logExecution(tag: String, func: () -> Unit) {
-        func()
-    }
-
-    data class Result(val data :String, val status : Int)
-
-    fun  function() : Result {
-
-        var testing = listOf(1,2,3,4,5,6)
-        if (testing.any { it % 2 == 0 } && testing.all { it < 10 }){
-            var count = testing.count { it % 2 == 0 }
+        if (contacts.childCount == 0) {
+            realm.executeTransaction {
+                var contactAdapter = ContactAdapter(this)
+                contactAdapter.addContact(realm.where(Contact::class.java).findAll().toMutableList())
+                contacts.adapter = contactAdapter
+            }
         }
+    }
 
-        testing.forEach {  }
+    override fun onOptionsItemSelected(item: MenuItem?): Boolean {
+        when (item?.getItemId()) {
+            R.id.add -> {
+                startActivityForResult(newintent(this), 777)
 
-        return Result("success", 200)
+            }
+        }
+        return true
+    }
+
+    override fun onCreateOptionsMenu(menu: Menu?): Boolean {
+        menuInflater.inflate(R.menu.menu_main, menu)
+        return true
+
+    }
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        if (requestCode == 777 && resultCode == Activity.RESULT_OK) {
+            realm.executeTransaction {
+                (contacts.adapter as ContactAdapter).addContact(realm.where(Contact::class.java).findAll().toMutableList())
+            }
+        }
+    }
+
+    override fun onContactEdit(contact: Contact) {
+        startActivityForResult(newintent(this, contact.name, contact.address, contact.phone), 777)
+    }
+
+    override fun onContactDelete(contact: Contact) {
+        realm.executeTransaction {
+            realm.where(Contact::class.java)
+                    .equalTo(KEY_NAME, contact.name)
+                    .equalTo(KEY_ADDRESS, contact.address)
+                    .equalTo(KEY_PHONE, contact.phone)
+                    .findFirst()
+                    .deleteFromRealm()
+        }
+        contacts.adapter.notifyDataSetChanged()
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        realm.close()
+    }
+
+    companion object {
+
+        val KEY_NAME = "name"
+        val KEY_ADDRESS = "address"
+        val KEY_PHONE = "phone"
+
+        fun newintent(context: Context, name: String? = null, address: String? = null, phone: Long? = null): Intent {
+
+            val intent = Intent(context, ContactActivity::class.java)
+            intent.putExtra(KEY_NAME, name)
+            intent.putExtra(KEY_ADDRESS, address)
+            intent.putExtra(KEY_PHONE, phone)
+
+            return intent
+        }
     }
 
 }
